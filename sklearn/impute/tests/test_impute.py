@@ -19,10 +19,10 @@ from sklearn.experimental import enable_iterative_imputer  # noqa
 from sklearn.impute import MissingIndicator
 from sklearn.impute import SimpleImputer, IterativeImputer
 from sklearn.dummy import DummyRegressor
-from sklearn.linear_model import BayesianRidge, ARDRegression, RidgeCV
+from sklearn.linear_model import BayesianRidge, ARDRegression, RidgeCV, LogisticRegression
 from sklearn.pipeline import Pipeline
-from sklearn.pipeline import make_union
-from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import make_union, make_pipeline
+from sklearn.model_selection import GridSearchCV, PredefinedSplit, cross_val_score
 from sklearn import tree
 from sklearn.random_projection import sparse_random_matrix
 
@@ -1211,3 +1211,14 @@ def test_simple_imputation_add_indicator_sparse_matrix(arr_type):
     assert sparse.issparse(X_trans)
     assert X_trans.shape == X_true.shape
     assert_allclose(X_trans.toarray(), X_true)
+
+def test_simple_imputation_add_indicator_cross_validation():
+    X = np.array([[1, 2, 3, np.nan]]).T
+    y = np.array([0, 0, 1, 1])
+    test_fold = np.array([0, 1, 0, 1])
+
+    ps = PredefinedSplit(test_fold)
+    pipe1 = make_pipeline(SimpleImputer(add_indicator=True),
+                          LogisticRegression(solver='lbfgs'))
+
+    cross_val_score(pipe1, X, y, cv=ps)
